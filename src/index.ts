@@ -4,6 +4,7 @@ import { SqliteConnection } from "./repositories/SqliteConnection";
 import { ProductRepository } from "./repositories/ProductRepository";
 import { ProductOrderRepository } from "./repositories/ProductOrderRepository";
 import { ProductInputRepository } from "./repositories/ProductInputRepository";
+import { ProductOutputRepository } from "./repositories/ProductOutputRepository";
 
 import { CreateProductUsecase } from "./usecases/CreateProductUsecase";
 import { CreateProductOrderUsecase } from "./usecases/CreateProductOrderUsecase";
@@ -11,6 +12,7 @@ import { CreateProductInputUsecase } from "./usecases/CreateProductInputUsecase"
 import { DeleteProductInputUsecase } from "./usecases/DeleteProductInputUsecase";
 import { GetAllProductsUsecase } from "./usecases/GetAllProductsUsecase";
 import { GetProductUsecase } from "./usecases/GetProductUsecase";
+import { CreateProductOutputUsecase } from "./usecases/CreateProductOutputUsecase";
 
 import { CreateProductController } from "./controllers/CreateProductController";
 import { CreateProductOrderController } from "./controllers/CreateProductOrderController";
@@ -27,6 +29,7 @@ const sqliteConnection = new SqliteConnection("db/estoque.sqlite");
 const productRepository = new ProductRepository(sqliteConnection);
 const productOrderRepository = new ProductOrderRepository(sqliteConnection);
 const productInputRepository = new ProductInputRepository(sqliteConnection);
+const productOutputRepository = new ProductOutputRepository(sqliteConnection);
 
 // Instanciação de Casos de Uso
 const createProductUsecase = new CreateProductUsecase(productRepository);
@@ -35,6 +38,7 @@ const createProductInputUsecase = new CreateProductInputUsecase(productOrderRepo
 const getAllProductsUsecase = new GetAllProductsUsecase(productRepository);
 const getProductUsecase = new GetProductUsecase(productRepository);
 const deleteProductInputUsecase = new DeleteProductInputUsecase(productInputRepository,productOrderRepository,productRepository);
+const createProductOutputUsecase = new CreateProductOutputUsecase(productRepository, productOutputRepository);
 
 // Instanciação de Adaptadores de Interface (Controllers)
 const createProductController = new CreateProductController(createProductUsecase);
@@ -44,7 +48,7 @@ const getAllProductsController = new GetAllProductsController(getAllProductsUsec
 const getProductController = new GetProductController(getProductUsecase);
 const deleteProductInputController = new DeleteProductInputController(deleteProductInputUsecase);
 
-const createProductOutputController = new CreateProductOutputController();
+const createProductOutputController = new CreateProductOutputController(createProductOutputUsecase);
 
 const app = fastify();
 app.register(cors, {
