@@ -7,6 +7,7 @@ import type { SqliteConnection } from "./SqliteConnection";
 export interface ProductOrderRepositoryInterface {
     create(productOrder: ProductOrder): void | InfrastructureError;
     findById(id: string): ProductOrder | null | InfrastructureError;
+    findAll(): ProductOrder[] | InfrastructureError;
     close(id: string): void | InfrastructureError;
 }
 
@@ -72,6 +73,38 @@ export class ProductOrderRepository implements ProductOrderRepositoryInterface, 
                 new Date(row.order_date),
                 row.status,
             );
+        } catch (error) {
+            return new InfrastructureError("Database error");
+        }
+    }
+
+    public findAll(): ProductOrder[] | InfrastructureError {
+        try {
+            const connection: Database.Database = this.sqliteConnection.getConnection();
+            const selectStatement = connection.prepare(
+                `SELECT po.id, po.product_barcode, po.order_quantity, po.order_date, po.status,
+                        p.barcode, p.name, p.quantity_in_stock
+                   FROM product_orders po
+                   JOIN products p ON p.barcode = po.product_barcode`,
+            );
+            const rows = selectStatement.all() as Array<{
+                id: string;
+                product_barcode: string;
+                order_quantity: number;
+                order_date: string;
+                status: string;
+                barcode: string;
+                name: string;
+                quantity_in_stock: number;
+            }>;
+
+            return rows.map(row => ProductOrder.rebuild(
+                row.id,
+                Product.rebuild(row.barcode, row.name, row.quantity_in_stock),
+                row.order_quantity,
+                new Date(row.order_date),
+                row.status,
+            ));
         } catch (error) {
             return new InfrastructureError("Database error");
         }

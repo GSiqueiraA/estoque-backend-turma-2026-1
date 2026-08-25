@@ -21,6 +21,15 @@ describe("CreateProductOrderUsecase tests", () => {
             create(productOrder: ProductOrder): void | InfrastructureError {
                 return;
             }
+            findAll(): ProductOrder[] | InfrastructureError {
+                return [];
+            }
+            findById(): ProductOrder | null | InfrastructureError {
+                return null;
+            }
+            close(): void | InfrastructureError {
+                return;
+            }
         }
 
         const usecase = new CreateProductOrderUsecase(
@@ -58,6 +67,15 @@ describe("CreateProductOrderUsecase tests", () => {
             create(productOrder: ProductOrder): void | InfrastructureError {
                 return;
             }
+            findAll(): ProductOrder[] | InfrastructureError {
+                return [];
+            }
+            findById(): ProductOrder | null | InfrastructureError {
+                return null;
+            }
+            close(): void | InfrastructureError {
+                return;
+            }
         }
 
         const usecase = new CreateProductOrderUsecase(
@@ -83,6 +101,15 @@ describe("CreateProductOrderUsecase tests", () => {
 
         class ProductOrderRepositoryMock implements ProductOrderRepositoryInterface {
             create(productOrder: ProductOrder): void | InfrastructureError {
+                return;
+            }
+            findAll(): ProductOrder[] | InfrastructureError {
+                return [];
+            }
+            findById(): ProductOrder | null | InfrastructureError {
+                return null;
+            }
+            close(): void | InfrastructureError {
                 return;
             }
         }
@@ -112,6 +139,15 @@ describe("CreateProductOrderUsecase tests", () => {
             create(productOrder: ProductOrder): void | InfrastructureError {
                 return;
             }
+            findAll(): ProductOrder[] | InfrastructureError {
+                return [];
+            }
+            findById(): ProductOrder | null | InfrastructureError {
+                return null;
+            }
+            close(): void | InfrastructureError {
+                return;
+            }
         }
 
         const usecase = new CreateProductOrderUsecase(
@@ -138,6 +174,15 @@ describe("CreateProductOrderUsecase tests", () => {
         class ProductOrderRepositoryMock implements ProductOrderRepositoryInterface {
             create(productOrder: ProductOrder): void | InfrastructureError {
                 return new InfrastructureError("Database error");
+            }
+            findAll(): ProductOrder[] | InfrastructureError {
+                return [];
+            }
+            findById(): ProductOrder | null | InfrastructureError {
+                return null;
+            }
+            close(): void | InfrastructureError {
+                return;
             }
         }
 

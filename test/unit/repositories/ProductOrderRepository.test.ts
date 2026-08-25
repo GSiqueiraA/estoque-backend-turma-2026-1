@@ -48,6 +48,50 @@ describe("ProductOrderRepository tests", () => {
     expect(result).toBeNull();
   });
 
+  test("should find all product orders", () => {
+    const product = Product.rebuild("111111", "Coca Cola", 10);
+    const secondProduct = Product.rebuild("222222", "Pepsi", 5);
+    const productRepository = new ProductRepository(sqliteConnection);
+    const repository = new ProductOrderRepository(sqliteConnection);
+    productRepository.create(product);
+    productRepository.create(secondProduct);
+
+    repository.create(ProductOrder.rebuild(
+      "order-1", product, 20, new Date("2024-01-01T12:00:00.000Z"), "opened",
+    ));
+    repository.create(ProductOrder.rebuild(
+      "order-2", secondProduct, 30, new Date("2024-01-02T12:00:00.000Z"), "closed",
+    ));
+
+    const result = repository.findAll();
+
+    expect(result).toHaveLength(2);
+    expect(result).toEqual([
+      ProductOrder.rebuild(
+        "order-1", Product.rebuild("111111", "Coca Cola", 10), 20,
+        new Date("2024-01-01T12:00:00.000Z"), "opened",
+      ),
+      ProductOrder.rebuild(
+        "order-2", Product.rebuild("222222", "Pepsi", 5), 30,
+        new Date("2024-01-02T12:00:00.000Z"), "closed",
+      ),
+    ]);
+  });
+
+  test("should return an empty list when no product order exists", () => {
+    expect(new ProductOrderRepository(sqliteConnection).findAll()).toEqual([]);
+  });
+
+  test("should return an infrastructure error when finding all orders fails", () => {
+    const repository = new ProductOrderRepository({
+      getConnection: () => ({
+        prepare: () => { throw new Error("database unavailable"); },
+      }),
+    } as any);
+
+    expect(repository.findAll()).toEqual(new InfrastructureError("Database error"));
+  });
+
   test("should return an infrastructure error when creating an order fails", () => {
     const product = Product.rebuild("1234567890123", "Biscoito Recheado", 100);
     const order = ProductOrder.create(

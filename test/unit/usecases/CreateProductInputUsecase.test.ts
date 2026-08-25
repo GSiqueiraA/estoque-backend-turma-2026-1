@@ -12,6 +12,10 @@ abstract class ProductOrderRepositoryMockBase
 {
   create(): void {}
 
+  findAll(): ProductOrder[] {
+    return [];
+  }
+
   abstract findById(
     id: string,
   ): ProductOrder | null | InfrastructureError;

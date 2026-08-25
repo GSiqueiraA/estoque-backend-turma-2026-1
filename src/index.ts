@@ -11,6 +11,8 @@ import { CreateProductInputUsecase } from "./usecases/CreateProductInputUsecase"
 import { DeleteProductInputUsecase } from "./usecases/DeleteProductInputUsecase";
 import { GetAllProductsUsecase } from "./usecases/GetAllProductsUsecase";
 import { GetProductUsecase } from "./usecases/GetProductUsecase";
+import { GetAllProductOrdersUsecase } from "./usecases/GetAllProductOrdersUsecase";
+import { GetProductOrderUsecase } from "./usecases/GetProductOrderUsecase";
 
 import { CreateProductController } from "./controllers/CreateProductController";
 import { CreateProductOrderController } from "./controllers/CreateProductOrderController";
@@ -18,6 +20,8 @@ import { CreateProductInputController } from "./controllers/CreateProductInputCo
 import { DeleteProductInputController } from "./controllers/DeleteProductInputController";
 import { GetAllProductsController } from "./controllers/GetAllProductsController";
 import { GetProductController } from "./controllers/GetProductController";
+import { GetAllProductOrdersController } from "./controllers/GetAllProductOrdersController";
+import { GetProductOrderController } from "./controllers/GetProductOrderController";
 import { CreateProductOutputController } from "./controllers/CreateProductOutputController";
 
 // Instanciação da infraestrutura de banco de dados
@@ -34,6 +38,8 @@ const createProductOrderUsecase = new CreateProductOrderUsecase(productRepositor
 const createProductInputUsecase = new CreateProductInputUsecase(productOrderRepository, productInputRepository, productRepository);
 const getAllProductsUsecase = new GetAllProductsUsecase(productRepository);
 const getProductUsecase = new GetProductUsecase(productRepository);
+const getAllProductOrdersUsecase = new GetAllProductOrdersUsecase(productOrderRepository);
+const getProductOrderUsecase = new GetProductOrderUsecase(productOrderRepository);
 const deleteProductInputUsecase = new DeleteProductInputUsecase(productInputRepository,productOrderRepository,productRepository);
 
 // Instanciação de Adaptadores de Interface (Controllers)
@@ -42,6 +48,8 @@ const createProductOrderController = new CreateProductOrderController(createProd
 const createProductInputController = new CreateProductInputController(createProductInputUsecase);
 const getAllProductsController = new GetAllProductsController(getAllProductsUsecase);
 const getProductController = new GetProductController(getProductUsecase);
+const getAllProductOrdersController = new GetAllProductOrdersController(getAllProductOrdersUsecase);
+const getProductOrderController = new GetProductOrderController(getProductOrderUsecase);
 const deleteProductInputController = new DeleteProductInputController(deleteProductInputUsecase);
 
 const createProductOutputController = new CreateProductOutputController();
@@ -67,6 +75,14 @@ app.get("/products/:barcode", async (request, reply) => {
 
 app.post("/product-orders", async (request, reply) => { 
     await createProductOrderController.handle(request, reply); 
+});
+
+app.get("/product-orders", async (request, reply) => {
+    await getAllProductOrdersController.handle(request, reply);
+});
+
+app.get("/product-orders/:id", async (request, reply) => {
+    await getProductOrderController.handle(request, reply);
 });
 
 app.post("/product-inputs", async (request, reply) => { 
