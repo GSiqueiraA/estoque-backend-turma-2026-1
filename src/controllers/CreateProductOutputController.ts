@@ -1,16 +1,31 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import Database from "better-sqlite3";
-
+import { InfrastructureError } from "../InfrastructureError";
+import type { CreateProductOutputUsecaseInterface } from "../usecases/CreateProductOutputUsecase";
 
 export class CreateProductOutputController {
-    public async handle(request: FastifyRequest, response: FastifyReply): Promise<FastifyReply> {
-        const { barcode, quantity, outputDate } = request.body as { barcode: string; quantity: number; outputDate: string; };
+    public constructor(private readonly createProductOutputUsecase: CreateProductOutputUsecaseInterface) {}
+
+    public async handle(request: FastifyRequest, response: FastifyReply): Promise<void> {
+        if (!request.body || typeof request.body !== "object") {
+            response.status(400).send({ error: "Invalid request body" });
+            return;
+        }
+
+        const { barcode, quantity, outputDate } = request.body as {
+            barcode?: string;
+            quantity?: number;
+            outputDate?: string;
+        };
 
         if (!barcode) {
             return response.status(400).send({ error: "Barcode is required" });
         }
 
-        if (!quantity || quantity <= 0) {
+        if (quantity === undefined) {
+            return response.status(400).send({ error: "Quantity is required" });
+        }
+
+        if (!Number.isInteger(quantity) || quantity <= 0) {
             return response.status(400).send({ error: "Quantity must be a positive number" });
         }
 
@@ -23,43 +38,26 @@ export class CreateProductOutputController {
             return response.status(400).send({ error: "Invalid output date format" });
         }
         
-        try {
-            const connection = new Database("db/estoque.sqlite");
+        const result = this.createProductOutputUsecase.execute(barcode, quantity, newOutputDate);
 
-            const statement = connection.prepare("SELECT * FROM products WHERE barcode = ?");
-            const product = statement.get(barcode) as { barcode: string; name: string; quantity_in_stock: number } | undefined;
-
-            if (!product) {
-                return response.status(404).send({ error: "Product not found" });
-            }
-
-            const stock = product.quantity_in_stock;
-            
-            if (quantity > stock) {
-                return response.status(400).send({ error: "Insufficient stock for the requested output quantity" });
-            }
-
-            const uuid = crypto.randomUUID();
-
-            const insertStatement = connection.prepare("INSERT INTO product_outputs (id, product_id, quantity, output_date) VALUES (?, ?, ?, ?)");
-            insertStatement.run(uuid, barcode, quantity, newOutputDate.toISOString());
-
-            const newStock = stock - quantity;
-
-            const updateProductStatement = connection.prepare("UPDATE products SET quantity_in_stock = ? WHERE barcode = ?");
-            updateProductStatement.run(newStock, barcode);
-
-            return response.status(201).send({ 
-                productOutputId: uuid,
-                productOutputQuantity: quantity,
-                productOutputDate: newOutputDate.toISOString(),
-                productBarcode: product.barcode,
-                productName: product.name,
-                productStock: newStock
-             });
-
-        } catch (error) {
-            return response.status(500).send({ error: "Internal server error" });
+        if (result instanceof InfrastructureError) {
+            response.status(500).send({ error: result.message });
+            return;
         }
+
+        if (result instanceof Error) {
+            const statusCode = result.message === "Product not found" ? 404 : 400;
+            response.status(statusCode).send({ error: result.message });
+            return;
+        }
+
+        response.status(201).send({
+            productOutputId: result.productOutputId,
+            productOutputQuantity: result.productOutputQuantity,
+            productOutputDate: result.productOutputDate,
+            productBarcode: result.productBarcode,
+            productName: result.productName,
+            productStock: result.productStock,
+        });
     }
 }
