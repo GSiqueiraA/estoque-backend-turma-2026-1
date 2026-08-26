@@ -33,7 +33,7 @@ describe("CreateProductOutputController", () => {
 
     test("should delegate creation and return 201", async () => {
         const calls: unknown[][] = [];
-        const usecaseMock: CreateProductOutputUsecaseInterface = {
+        const usecase: CreateProductOutputUsecaseInterface = {
             execute(...args) {
                 calls.push(args);
                 return result;
@@ -41,7 +41,7 @@ describe("CreateProductOutputController", () => {
         };
         const response = createResponseMock();
 
-        await new CreateProductOutputController(usecaseMock).handle(
+        await new CreateProductOutputController(usecase).handle(
             {
                 body: {
                     barcode: "123456",
@@ -75,6 +75,31 @@ describe("CreateProductOutputController", () => {
         expect(called).toBe(false);
         expect(response.statusCode).toBe(400);
         expect(response.data).toEqual({ error: "Invalid request body" });
+    });
+
+    test("should return 400 when the quantity is missing", async () => {
+        let called = false;
+        const usecase: CreateProductOutputUsecaseInterface = {
+            execute() {
+                called = true;
+                return result;
+            },
+        };
+        const response = createResponseMock();
+
+        await new CreateProductOutputController(usecase).handle(
+            {
+                body: {
+                    barcode: "123456",
+                    outputDate: outputDate.toISOString(),
+                },
+            } as any,
+            response as any,
+        );
+
+        expect(called).toBe(false);
+        expect(response.statusCode).toBe(400);
+        expect(response.data).toEqual({ error: "Quantity is required" });
     });
 
     test("should return 400 when the request data is invalid", async () => {
