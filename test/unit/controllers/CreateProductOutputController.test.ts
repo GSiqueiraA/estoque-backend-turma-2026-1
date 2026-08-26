@@ -33,7 +33,7 @@ describe("CreateProductOutputController", () => {
 
     test("should delegate creation and return 201", async () => {
         const calls: unknown[][] = [];
-        const usecase: CreateProductOutputUsecaseInterface = {
+        const usecaseMock: CreateProductOutputUsecaseInterface = {
             execute(...args) {
                 calls.push(args);
                 return result;
@@ -41,7 +41,7 @@ describe("CreateProductOutputController", () => {
         };
         const response = createResponseMock();
 
-        await new CreateProductOutputController(usecase).handle(
+        await new CreateProductOutputController(usecaseMock).handle(
             {
                 body: {
                     barcode: "123456",
