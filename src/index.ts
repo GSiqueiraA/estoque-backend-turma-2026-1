@@ -16,6 +16,8 @@ import { GetAllProductOrdersUsecase } from "./usecases/GetAllProductOrdersUsecas
 import { GetProductOrderUsecase } from "./usecases/GetProductOrderUsecase";
 import { CreateProductOutputUsecase } from "./usecases/CreateProductOutputUsecase";
 import { DeleteProductOutputUsecase } from "./usecases/DeleteProductOutputUsecase";
+import { GetAllProductOutputsUsecase } from "./usecases/GetAllProductOutputsUsecase";
+import { GetProductOutputUsecase } from "./usecases/GetProductOutputUsecase";
 
 import { CreateProductController } from "./controllers/CreateProductController";
 import { CreateProductOrderController } from "./controllers/CreateProductOrderController";
@@ -27,6 +29,8 @@ import { GetAllProductOrdersController } from "./controllers/GetAllProductOrders
 import { GetProductOrderController } from "./controllers/GetProductOrderController";
 import { CreateProductOutputController } from "./controllers/CreateProductOutputController";
 import { DeleteProductOutputController } from "./controllers/DeleteProductOutputController";
+import { GetAllProductOutputsController } from "./controllers/GetAllProductOutputsController";
+import { GetProductOutputController } from "./controllers/GetProductOutputController";
 
 
 // Instanciação da infraestrutura de banco de dados
@@ -49,6 +53,8 @@ const getProductOrderUsecase = new GetProductOrderUsecase(productOrderRepository
 const deleteProductInputUsecase = new DeleteProductInputUsecase(productInputRepository,productOrderRepository,productRepository);
 const createProductOutputUsecase = new CreateProductOutputUsecase(productRepository, productOutputRepository);
 const deleteProductOutputUsecase = new DeleteProductOutputUsecase(productOutputRepository, productRepository);
+const getAllProductOutputsUsecase = new GetAllProductOutputsUsecase(productOutputRepository);
+const getProductOutputUsecase = new GetProductOutputUsecase(productOutputRepository);
 
 // Instanciação de Adaptadores de Interface (Controllers)
 const createProductController = new CreateProductController(createProductUsecase);
@@ -61,6 +67,8 @@ const getProductOrderController = new GetProductOrderController(getProductOrderU
 const deleteProductInputController = new DeleteProductInputController(deleteProductInputUsecase);
 const createProductOutputController = new CreateProductOutputController(createProductOutputUsecase);
 const deleteProductOutputController = new DeleteProductOutputController(deleteProductOutputUsecase);
+const getAllProductOutputsController = new GetAllProductOutputsController(getAllProductOutputsUsecase);
+const getProductOutputController = new GetProductOutputController(getProductOutputUsecase);
 
 const app = fastify();
 app.register(cors, {
@@ -102,6 +110,14 @@ app.delete("/product-inputs/:productInputId", async (request, reply) => {
 });
 app.post("/product-outputs", async (request, reply) => { 
     await createProductOutputController.handle(request, reply); 
+});
+
+app.get("/product-outputs", async (request, reply) => {
+    await getAllProductOutputsController.handle(request, reply);
+});
+
+app.get("/product-outputs/:id", async (request, reply) => {
+    await getProductOutputController.handle(request, reply);
 });
 
 app.delete("/product-outputs/:productOutputId", async (request, reply) => {

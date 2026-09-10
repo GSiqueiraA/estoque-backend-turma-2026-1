@@ -6,6 +6,7 @@ import type { SqliteConnection } from "./SqliteConnection";
 
 export interface ProductOutputRepositoryInterface {
     create(productOutput: ProductOutput): void | InfrastructureError;
+    findAll(): ProductOutput[] | InfrastructureError;
 }
 
 // Interface segregada para operacoes de exclusao (ISP)
@@ -53,6 +54,23 @@ export class ProductOutputRepository implements ProductOutputRepositoryInterface
             return this.toEntity(row);
         } catch {
             return new InfrastructureError("Failed to find product output");
+        }
+    }
+
+    // Lista todas as saidas com o produto associado via join
+    public findAll(): ProductOutput[] | InfrastructureError {
+        try {
+            const connection: Database.Database = this.sqliteConnection.getConnection();
+            const rows = connection.prepare(
+                `SELECT po.id, po.quantity, po.output_date,
+                        p.barcode, p.name, p.quantity_in_stock
+                   FROM product_outputs po
+                   JOIN products p ON p.barcode = po.product_id`
+            ).all() as ProductOutputRow[];
+
+            return rows.map(row => this.toEntity(row));
+        } catch {
+            return new InfrastructureError("Failed to list product outputs");
         }
     }
 
