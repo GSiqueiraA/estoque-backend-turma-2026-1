@@ -6,13 +6,13 @@ Apresentação do trabalho realizado no backend do Sistema de Controle de Estoqu
 
 ## 1. Contexto da tarefa
 
-Conforme o enunciado do grupo:
+Lista do que deve ser feito:
 
 - ✅ **Criar uma saída** — já estava pronto no backend (não foi alterado).
 - ✅ **Implementar no backend**: listar todas as saídas e listar uma saída específica (com testes unitários e de integração).
-- ⬜ **Frontend**: páginas de listar todas as saídas, cadastrar saída e listar uma saída específica (fora deste repositório).
-- ⬜ **Playwright**: teste para cadastrar uma saída (fora deste repositório).
-- ⬜ **Cucumber**: 2 cenários — caminho feliz e caminho com erro (fora deste repositório).
+- ✅ **Frontend**: páginas de listar todas as saídas, cadastrar saída e listar uma saída específica (Vite + React).
+- ✅ **Playwright**: teste para cadastrar uma saída (`frontend/tests/e2e/`).
+- ✅ **Cucumber**: 2 cenários — caminho feliz e caminho com erro (`frontend/features/`).
 
 ---
 
@@ -165,10 +165,121 @@ Cobertura dos arquivos novos/alterados: **100%** em statements, branches, funç�
 
 ---
 
-## 6. Pendências (próximos passos)
+## 6. Frontend (Vite + React)
 
-1. **Frontend**: páginas de listar todas as saídas, cadastrar saída e listar uma saída específica (consumindo `GET /product-outputs`, `POST /product-outputs`, `GET /product-outputs/:id`).
-2. **Playwright**: teste automatizado do fluxo de cadastro de saída.
-3. **Cucumber**: 2 cenários —
-   - *Caminho feliz*: cadastrar saída com quantidade válida → estoque reduzido, saída listada.
-   - *Caminho com erro*: quantidade maior que o estoque → mensagem "Insufficient stock for the requested output quantity".
+Criado o app em `frontend/` (monorepo minimalista, sem Docker — tudo roda local com Node + SQLite):
+
+```
+frontend/
+  src/
+    pages/OutputsPage.tsx        # listar todas as saídas
+    pages/OutputCreatePage.tsx   # cadastrar saída
+    pages/OutputDetailsPage.tsx  # detalhes de uma saída específica
+    api.ts                       # axios + tipagem das rotas de saída
+  tests/e2e/                     # Playwright
+  features/                      # Cucumber (feature + steps + world)
+  playwright.config.ts
+  cucumber.mjs
+```
+
+### Páginas implementadas
+
+| Rota | Página | Consome |
+|---|---|---|
+| `/outputs` | Listar todas as saídas (tabela com UUID, produto, quantidade, data) | `GET /product-outputs` |
+| `/outputs/new` | Formulário de nova saída (barcode, quantidade, data) | `POST /product-outputs` |
+| `/outputs/:id` | Detalhes da saída (com `data-testid` para os testes) | `GET /product-outputs/:id` |
+
+- Erros da API exibidos na UI (ex.: "Insufficient stock..."); sucesso navega para os detalhes com "Saída criada com sucesso!".
+- O Vite faz proxy de `/api` → `localhost:3000` (configurado em `vite.config.ts`).
+- Stack: React 19, react-router-dom 7, axios, CSS puro.
+
+### Detalhe importante do backend aproveitado no frontend
+
+Produto criado via API nasce com **estoque 0**. Para ter estoque é preciso o fluxo pedido → entrada: `POST /product-orders` (gera o UUID do pedido) e depois `POST /product-inputs` com esse UUID. Os testes E2E usam esse fluxo pela API antes de exercitar a saída pela UI.
+
+---
+
+## 7. Teste Playwright (E2E)
+
+`frontend/tests/e2e/create-product-output.e2e.spec.ts`
+
+Fluxo testado (Chromium real):
+
+1. Cria produto + pedido + entrada via API (estoque 100).
+2. Navega para `/outputs/new`.
+3. Preenche barcode, quantidade 20 e data.
+4. Submete com "Criar Saída".
+5. Valida "Saída criada com sucesso!", `output-quantity` = 20 e estoque atualizado (`product-quantity` = 80).
+
+O `playwright.config.ts` sobe frontend e backend automaticamente (`webServer`), reutilizando servidores já ativos (`reuseExistingServer`).
+
+---
+
+## 8. Cucumber (BDD)
+
+`frontend/features/CreateProductOutput.feature` — 2 cenários:
+
+```gherkin
+Scenario: Saída criada com sucesso
+  Given que existe um produto com estoque disponível
+  When navego para a tela de nova saída
+  And preencho os dados da saída com o barcode do produto e uma quantidade menor ou igual ao estoque
+  And solicito a criação da saída
+  Then devo ver os detalhes da saída criada
+  And o estoque do produto deve estar atualizado na saída
+
+Scenario: Erro ao criar a saída quando a quantidade é maior que o estoque
+  Given que existe um produto com estoque disponível
+  When navego para a tela de nova saída
+  And preencho os dados da saída com o barcode do produto e uma quantidade maior que o estoque
+  And solicito a criação da saída
+  Then devo ver a mensagem de erro de estoque insuficiente
+```
+
+- Steps em `features/steps/CreateProductOutput.steps.ts` usam Playwright como driver do navegador (expect do `@playwright/test`) com `CustomWorld` (`features/support/world.ts`) que abre/fecha o Chromium por cenário.
+- Caminho feliz: quantidade 30 → valida detalhes e estoque 70.
+- Caminho com erro: quantidade 110 → valida "Insufficient stock for the requested output quantity" na UI.
+- Resultado: **2 scenarios (2 passed), 15 steps (15 passed)**.
+
+---
+
+## 9. Orquestração de scripts (raiz)
+
+`concurrently` na raiz (padrão monorepo, como no VPtelecom):
+
+| Comando | O que faz |
+|---|---|
+| `npm run dev:all` | backend (:3000) + frontend (:5173) juntos, com prefixos coloridos |
+| `npm run dev:backend` / `dev:frontend` | cada servidor isolado |
+| `npm run test` | Jest do backend (65 testes) |
+| `npm run test:e2e` | Playwright |
+| `npm run cucumber` | Cucumber |
+| `npm run build:all` | build backend + frontend |
+
+**Docker: não é necessário** — backend é Node + SQLite (arquivo local) e frontend é Vite; tudo roda com npm.
+
+---
+
+## 10. Pendências restantes
+
+Nenhuma — todos os itens do enunciado foram concluídos.
+
+Possíveis melhorias futuras:
+- Deploy (aí sim avaliar Docker/nginx).
+- Deletar saída na UI (endpoint já existe: `DELETE /product-outputs/:id`).
+
+---
+
+## Como rodar tudo
+
+```powershell
+cd C:\Users\gabri\estoque-backend-turma-2026-1
+npm run dev:all          # backend :3000 + frontend :5173
+
+# testes (em outro terminal)
+npm run test             # Jest backend (65 testes)
+npm run test:e2e         # Playwright
+npm run cucumber         # Cucumber (2 cenários)
+```
+

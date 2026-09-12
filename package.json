@@ -7,9 +7,16 @@
     "doc": "docs"
   },
   "scripts": {
+    "dev": "tsx src/index.ts",
+    "dev:all": "concurrently -n backend,frontend -c blue,green \"npm run dev\" \"npm run dev --prefix frontend\"",
+    "dev:backend": "tsx src/index.ts",
+    "dev:frontend": "npm run dev --prefix frontend",
     "build": "tsc -p tsconfig.build.json",
+    "build:all": "npm run build && npm run build --prefix frontend",
     "start": "tsx dist/index.js",
-    "test": "jest --coverage --runInBand"
+    "test": "jest --coverage --runInBand",
+    "test:e2e": "npm run test:e2e --prefix frontend",
+    "cucumber": "npm run cucumber --prefix frontend"
   },
   "repository": {
     "type": "git",
@@ -24,6 +31,7 @@
   },
   "homepage": "https://github.com/viniciusbarc/estoque-backend-turma-2026-1#readme",
   "devDependencies": {
+    "concurrently": "^9.1.0",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/jest-runner": "^9.6.1",
     "@types/better-sqlite3": "^7.6.13",
